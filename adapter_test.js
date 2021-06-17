@@ -1,4 +1,4 @@
-import { assertEquals, assertObjectMatch } from "./deps_dev.js";
+import { assertEquals, assertObjectMatch } from "./dev_deps.js";
 import { asyncFetch, createHeaders, handleResponse } from "./async-fetch.js";
 import { adapter } from "./adapter.js";
 
