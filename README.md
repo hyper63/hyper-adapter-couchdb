@@ -1,4 +1,8 @@
-# hyper63 couchdb-adapter
+# hyper-adapter-couchdb
+
+[![nest badge](https://nest.land/badge.svg)](https://nest.land/package/hyper-adapter-couchdb)
+[![current version](https://img.shields.io/github/tag/hyper63/hyper-adapter-couchdb)](https://github.com/hyper63/hyper-adapter-couchdb/tags/)
+[![Test](https://github.com/hyper63/hyper-adapter-couchdb/actions/workflows/test.yml/badge.svg)](https://github.com/hyper63/hyper-adapter-couchdb/actions/workflows/test.yml)
 
 This adapter connects the hyper63 service framework `data` port to the couchdb
 database. When using this adapter, you will need to configure three environment
