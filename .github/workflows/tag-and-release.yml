@@ -1,0 +1,34 @@
+name: Tag and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: the semver version to bump to
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          # Allows for pushes from this workflow to trigger subsequent workflows 
+          token: ${{ secrets.CI_GITHUB_TOKEN }} 
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14.x
+      - name: set git user
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+      - name: bump
+        id: bump
+        uses: hyper63/hyper-ci-bump@main
+        with:
+          bump-to: ${{github.event.inputs.version}}
+          package: ${{github.event.inputs.package}}
+          runtime: ${{github.event.inputs.runtime}}
+      - name: push
+        run: |
+          git push --follow-tags
