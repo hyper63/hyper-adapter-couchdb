@@ -27,8 +27,13 @@ jobs:
         uses: hyper63/hyper-ci-bump@main
         with:
           bump-to: ${{github.event.inputs.version}}
-          package: ${{github.event.inputs.package}}
-          runtime: ${{github.event.inputs.runtime}}
       - name: push
         run: |
           git push --follow-tags
+      - name: create github release
+        if: steps.bump.outputs.tag
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{steps.bump.outputs.tag}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
