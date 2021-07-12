@@ -48,10 +48,10 @@ _replicator table
 
 ### Credentials from ENV VARS
 
-When using this adapter, you will need to configure three environment
-variables, one for the `server-admin` credentials, so that the adapter can
-create/delete databases, and one for the `db-admin` user so a search index can
-be created. And finally one for the `db-user` user to manage documents.
+When using this adapter, you will need to configure three environment variables,
+one for the `server-admin` credentials, so that the adapter can create/delete
+databases, and one for the `db-admin` user so a search index can be created. And
+finally one for the `db-user` user to manage documents.
 
 .env
 
@@ -117,6 +117,7 @@ RUN echo 'single_node=true' >> /opt/couchdb/etc/local.d/10-single-node.ini
 ```
 
 Then run
+
 ```sh
 docker build -t single-couchdb:1 .
 docker run -d -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password --name couch single-couchdb:1
