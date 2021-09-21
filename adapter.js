@@ -13,6 +13,7 @@ const {
   identity,
   merge,
   pluck,
+  isEmpty,
 } = R;
 const xId = lens(prop("_id"), assoc("id"));
 
@@ -60,7 +61,13 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
       }).chain(handleResponse(200)).toPromise(),
 
     createDocument: ({ db, id, doc }) =>
-      Async.of({ ...doc, _id: id })
+      Async.of(doc)
+        .chain((doc) =>
+          isEmpty(doc)
+            ? Async.Rejected({ ok: false, status: 400, msg: "document empty" })
+            : Async.Resolved(doc)
+        )
+        .chain((doc) => Async.Resolved({ ...doc, _id: id }))
         .chain((doc) =>
           /^_design/.test(doc._id)
             ? Async.Rejected({
@@ -77,11 +84,25 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
           })
         )
         .chain(handleResponse(201))
+        .bichain(
+          (e) =>
+            e.status ? Async.Rejected(e) : Async.Rejected({
+              ok: false,
+              status: 409,
+              msg: "document conflict",
+            }),
+          Async.Resolved,
+        )
         .toPromise(),
     retrieveDocument: ({ db, id }) =>
       retrieveDocument({ db, id })
         .map(omit(["_id", "_rev"]))
         .map(assoc("id", id))
+        .bichain(
+          (_) =>
+            Async.Rejected({ ok: false, status: 404, msg: "doc not found" }),
+          Async.Resolved,
+        )
         .toPromise(),
     updateDocument: ({ db, id, doc }) => {
       // need to retrieve the document if exists
@@ -162,7 +183,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
       options = limit ? merge({ limit: Number(limit) }, options) : options;
       options = startkey ? merge({ startkey }, options) : options;
       options = endkey ? merge({ endkey }, options) : options;
-      options = keys ? merge({ keys }, options) : options;
+      options = keys ? merge({ keys: keys.split(",") }, options) : options;
       options = descending ? merge({ descending }, options) : options;
 
       return asyncFetch(`${config.origin}/${db}/_all_docs`, {

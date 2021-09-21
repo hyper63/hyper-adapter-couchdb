@@ -197,7 +197,7 @@ test("create query index", async () => {
     name: "foo",
     fields: ["foo"],
   });
-  console.log("results", results);
+  //console.log("results", results);
   assertEquals(results.ok, true);
 });
 
