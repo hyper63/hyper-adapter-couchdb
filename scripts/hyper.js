@@ -6,6 +6,6 @@ hyper({
   app,
   adapters: [{
     port: "data",
-    plugins: [couchdb({ url: "http://localhost:5984" })],
+    plugins: [couchdb({ url: "http://admin:password@localhost:5984" })],
   }],
 });
