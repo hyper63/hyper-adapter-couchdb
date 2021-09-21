@@ -1,6 +1,13 @@
 image:
   file: .gitpod.Dockerfile
 
+tasks:
+  - command: |
+      npx pouchdb-server --dir=/tmp --port=5984
+  - command: |
+      git config core.hooksPath .hooks
+      clear
+
 github:
   prebuilds:
     # enable for the default branch (defaults to true)
@@ -17,4 +24,3 @@ github:
     addComment: true
     # add a "Review in Gitpod" button to the pull request's description (defaults to false)
     addBadge: false
-    

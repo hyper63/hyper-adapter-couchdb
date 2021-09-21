@@ -86,6 +86,7 @@ export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
       .map(switchIds)
       .chain(applyBulkDocs(couchUrl, db, headers))
       .map(map(omit(["rev"])))
+      .map(map((d) => d.error ? assoc("ok", false, d) : d))
       .map((results) => ({ ok: true, results }))
       .toPromise();
 };

@@ -23,7 +23,7 @@
 `hyper.config.js`
 
 ```js
-import { default as couchdb } from "https://x.nest.land/hyper-adapter-couchdb@0.0.15/mod.js";
+import { default as couchdb } from "https://x.nest.land/hyper-adapter-couchdb@VERSION/mod.js";
 
 export default {
   app: opine,
@@ -69,7 +69,7 @@ This is a Deno module available to import from
 deps.js
 
 ```js
-export { default as couchdb } from "https://x.nest.land/hyper-adapter-couchdb@0.0.15/mod.js";
+export { default as couchdb } from "https://x.nest.land/hyper-adapter-couchdb@VERSION/mod.js";
 ```
 
 ## Features
