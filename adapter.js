@@ -14,8 +14,17 @@ const {
   merge,
   pluck,
   isEmpty,
+  toLower,
+  head,
+  toPairs,
 } = R;
 const xId = lens(prop("_id"), assoc("id"));
+
+const lowerCaseValue = compose(
+  ([k, v]) => ({ [k]: toLower(v) }),
+  head,
+  toPairs,
+);
 
 export function adapter({ config, asyncFetch, headers, handleResponse }) {
   const retrieveDocument = ({ db, id }) =>
@@ -141,6 +150,9 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         )
         .chain(handleResponse(200)).toPromise(),
     queryDocuments: ({ db, query }) => {
+      if (query.sort) {
+        query.sort = query.sort.map(lowerCaseValue);
+      }
       // NOTE: may need to handle replacing _id in a future
       // state to id?
       // or it may be easier to just make the unique id _id?
@@ -155,7 +167,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
           ok: true,
           docs: map(
             compose(
-              omit(["_id"]),
+              omit(["_id", "_rev"]),
               over(xId, identity),
             ),
             docs,

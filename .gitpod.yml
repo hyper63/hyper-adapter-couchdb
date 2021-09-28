@@ -1,9 +1,18 @@
 image:
   file: .gitpod.Dockerfile
 
+ports:
+  - port: 5984
+    onOpen: ignore
+    visibility: public
+  - port: 6363
+    onOpen: ignore
+    visibility: public
+
 tasks:
-  - command: |
-      npx pouchdb-server --dir=/tmp --port=5984
+  - init: docker build -t hyper-couch .couchdb
+    command: |
+      docker run -it -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password hyper-couch
   - command: |
       git config core.hooksPath .hooks
       clear
