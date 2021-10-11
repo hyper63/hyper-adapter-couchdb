@@ -1,4 +1,4 @@
-import { crocks, R } from "./deps.js";
+import { crocks, deepSwap, R } from "./deps.js";
 import { bulk } from "./bulk.js";
 const { Async } = crocks;
 
@@ -153,6 +153,8 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
       if (query.sort) {
         query.sort = query.sort.map(lowerCaseValue);
       }
+
+      query.selector = deepSwap("id", "_id", query.selector);
       // NOTE: may need to handle replacing _id in a future
       // state to id?
       // or it may be easier to just make the unique id _id?
