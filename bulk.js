@@ -78,11 +78,12 @@ export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
 
   return ({ db, docs }) =>
     Async.of(docs)
+      .map(map(omit(["_update"])))
       .chain(checkDbExists(couchUrl, db, headers))
       .chain(checkDocs)
       .map(pluckIds)
       .chain(getDocsThatExist(couchUrl, db, headers))
-      .map(mergeWithRevs(docs))
+      .map(mergeWithRevs(map(omit(["_update"]), docs)))
       .map(switchIds)
       .chain(applyBulkDocs(couchUrl, db, headers))
       .map(map(omit(["rev"])))
