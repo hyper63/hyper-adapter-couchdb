@@ -79,7 +79,6 @@ export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
   return ({ db, docs }) =>
     Async.of(docs)
       .map(map(omit(["_update"])))
-      //.map((d) => (console.log(d), d))
       .chain(checkDbExists(couchUrl, db, headers))
       .chain(checkDocs)
       .map(pluckIds)
@@ -89,7 +88,6 @@ export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
       .chain(applyBulkDocs(couchUrl, db, headers))
       .map(map(omit(["rev"])))
       .map(map((d) => d.error ? assoc("ok", false, d) : d))
-      //.map(r => (console.log(r), r))
       .map((results) => ({ ok: true, results }))
       .toPromise();
 };
