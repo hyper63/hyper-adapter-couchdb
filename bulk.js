@@ -55,6 +55,7 @@ export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
         .chain(handleResponse(200))
         .map(prop("rows"))
         .map(filter(has("value")))
+        .map(filter((rec) => !rec.value.deleted))
         .map(xRevs);
 
   const applyBulkDocs = (url, db, headers) =>
