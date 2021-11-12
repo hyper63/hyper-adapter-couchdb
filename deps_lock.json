@@ -1,8 +1,8 @@
 {
-  "https://cdn.skypack.dev/-/crocks@v0.12.4-Mje8nEhNx2rmIpwz3ROp/dist=es2020,mode=imports/optimized/crocks.js": "93d587d18dc5f124f30e5b38de37a6471eb65309c94ef2ffc7a36dc40ab394da",
-  "https://cdn.skypack.dev/-/ramda@v0.27.1-3ePaNsppsnXYRcaNcaWn/dist=es2020,mode=imports/optimized/ramda.js": "0e51cd76039fc9669f9179d935b261bcbb19ecbb11d49e7e60cfbc14360a85d2",
-  "https://cdn.skypack.dev/crocks@0.12.4": "d48852ce36c500f2770a2bc240cb6df9ffb2219d184b32b9be542e8560a6ff1d",
-  "https://cdn.skypack.dev/ramda@^0.27.1": "fb06d7de4305dcdb997f9adc903a463afcdac75d148d638295c420a8922048fd",
-  "https://wj6u2uviyecawc3ug4q6we5zdeasnec2wutqc44tcfjbdhagx3gq.arweave.net/sn1NUqjBBAsLdDch6xO5GQEmkFq1JwFzkxFSEZwGvs0/deep-swap.js": "b06baf5147a697354297d96467c7ee0e796c54c831f22e97aa60f25006919614",
-  "https://wj6u2uviyecawc3ug4q6we5zdeasnec2wutqc44tcfjbdhagx3gq.arweave.net/sn1NUqjBBAsLdDch6xO5GQEmkFq1JwFzkxFSEZwGvs0/deps.js": "dde0ee32e2e38d77421a291142e52752d6d8c900dabb81d1e8eb3953d8ec03dc"
+  "https://cdn.skypack.dev/-/crocks@v0.12.4-Mje8nEhNx2rmIpwz3ROp/dist=es2019,mode=imports/optimized/crocks.js": "93d587d18dc5f124f30e5b38de37a6471eb65309c94ef2ffc7a36dc40ab394da",
+  "https://cdn.skypack.dev/-/ramda@v0.27.1-3ePaNsppsnXYRcaNcaWn/dist=es2019,mode=imports/optimized/ramda.js": "0e51cd76039fc9669f9179d935b261bcbb19ecbb11d49e7e60cfbc14360a85d2",
+  "https://cdn.skypack.dev/crocks@0.12.4": "fc624b776247aa182539fed6fe1b21a578609d1c2c0e31830c4469f2bcd099cd",
+  "https://cdn.skypack.dev/ramda@^0.27.1": "a87add6080b004efb8072f81063306b03dac107cd2b6e5fca726f1a8bbb969b4",
+  "https://pyuzwmreux6xehhw6rf4dqs2ipv4rlp3x3mas4oc5w72o7u5wuca.arweave.net/fimbMiSl_XIc9vRLwcJaQ-vIrfu-2Alxwu2_p36dtQQ/deep-swap.js": "134fd57295b69678396a22e85187840e19eb4132a14fbe39053bc7768f721078",
+  "https://pyuzwmreux6xehhw6rf4dqs2ipv4rlp3x3mas4oc5w72o7u5wuca.arweave.net/fimbMiSl_XIc9vRLwcJaQ-vIrfu-2Alxwu2_p36dtQQ/deps.js": "dde0ee32e2e38d77421a291142e52752d6d8c900dabb81d1e8eb3953d8ec03dc"
 }
