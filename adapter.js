@@ -1,13 +1,16 @@
-import { crocks, deepSwap, R } from "./deps.js";
+import { crocks, R } from "./deps.js";
 import { bulk } from "./bulk.js";
 const { Async } = crocks;
 
 const {
   always,
+  curry,
   compose,
+  fromPairs,
   omit,
   map,
   lens,
+  lensProp,
   prop,
   assoc,
   over,
@@ -28,6 +31,29 @@ const lowerCaseValue = compose(
   head,
   toPairs,
 );
+
+const mapIds = curry((obj) =>
+  fromPairs(
+    map(
+      (x) => {
+        x[0] = x[0] === "id" ? "_id" : x[0];
+        return x;
+      },
+      toPairs(obj),
+    ),
+  )
+);
+
+// this is ugly but it works to solve the issue of swap ids on the selector
+const layerSwapIds = (d) => {
+  if (d.$and) {
+    return over(lensProp("$and"), map(mapIds), d);
+  } else if (d.$or) {
+    return over(lensProp("$or"), map(mapIds), d);
+  } else {
+    return mapIds(d);
+  }
+};
 
 export function adapter({ config, asyncFetch, headers, handleResponse }) {
   const retrieveDocument = ({ db, id }) =>
@@ -157,7 +183,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         query.sort = query.sort.map(lowerCaseValue);
       }
 
-      query.selector = deepSwap("id", "_id", query.selector);
+      query.selector = layerSwapIds(query.selector);
       if (query.fields) {
         query.fields = query.fields.map(
           ifElse(equals("id"), always("_id"), identity),
