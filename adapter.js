@@ -1,9 +1,8 @@
-import { crocks, deepSwap, R } from "./deps.js";
+import { crocks, R } from "./deps.js";
 import { bulk } from "./bulk.js";
 const { Async } = crocks;
 
 const {
-  always,
   compose,
   omit,
   map,
@@ -15,8 +14,6 @@ const {
   merge,
   pluck,
   isEmpty,
-  ifElse,
-  equals,
   toLower,
   head,
   toPairs,
@@ -155,13 +152,6 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
     queryDocuments: ({ db, query }) => {
       if (query.sort) {
         query.sort = query.sort.map(lowerCaseValue);
-      }
-
-      query.selector = deepSwap("id", "_id", query.selector);
-      if (query.fields) {
-        query.fields = query.fields.map(
-          ifElse(equals("id"), always("_id"), identity),
-        );
       }
       // NOTE: may need to handle replacing _id in a future
       // state to id?
