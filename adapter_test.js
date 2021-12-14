@@ -129,7 +129,7 @@ const a = adapter({
 test("bulk documents", async () => {
   const result = await a.bulkDocuments({
     db: "hello",
-    docs: [{ id: "1" }, { id: "2" }],
+    docs: [{ _id: "1" }, { _id: "2" }],
   }).catch((err) => ({ ok: false, err }));
   console.log("results", result);
   assertEquals(result.ok, true);
@@ -173,6 +173,9 @@ test("retrieve document", async () => {
     id: "1",
   });
   assertEquals(result.hello, "world");
+  assertEquals(result._id, "1");
+  // TODO: remove when blueberry is released
+  assertEquals(result.id, result._id);
 });
 
 test("find documents", async () => {
@@ -180,15 +183,18 @@ test("find documents", async () => {
     db: "hello",
     query: {
       selector: {
-        id: "1",
+        _id: "1",
       },
     },
   });
 
   assertObjectMatch(results.docs[0], {
-    id: "1",
+    _id: "1",
     hello: "world",
   });
+
+  // TODO: remove when blueberry is released
+  assertEquals(results.docs[0].id, results.docs[0]._id);
 });
 
 test("create query index", async () => {
@@ -207,7 +213,10 @@ test("list documents", async () => {
     limit: 1,
   });
   assertObjectMatch(results.docs[0], {
-    id: "1",
+    _id: "1",
     hello: "world",
   });
+
+  // TODO: remove when blueberry is released
+  assertEquals(results.docs[0].id, results.docs[0]._id);
 });

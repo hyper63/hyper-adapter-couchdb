@@ -105,7 +105,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         .toPromise(),
     retrieveDocument: ({ db, id }) =>
       retrieveDocument({ db, id })
-        .map(omit(["_id", "_rev"]))
+        .map(omit(["_rev"]))
         .map(assoc("id", id))
         .bichain(
           (_) =>
@@ -153,10 +153,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
       if (query.sort) {
         query.sort = query.sort.map(lowerCaseValue);
       }
-      // NOTE: may need to handle replacing _id in a future
-      // state to id?
-      // or it may be easier to just make the unique id _id?
-      //
+
       return asyncFetch(`${config.origin}/${db}/_find`, {
         method: "POST",
         headers,
@@ -167,7 +164,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
           ok: true,
           docs: map(
             compose(
-              omit(["_id", "_rev"]),
+              omit(["_rev"]),
               over(xId, identity),
             ),
             docs,
@@ -208,7 +205,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
           ok: true,
           docs: map(
             compose(
-              omit(["_rev", "_id"]),
+              omit(["_rev"]),
               over(xId, identity),
             ),
             pluck("doc", result.rows),
