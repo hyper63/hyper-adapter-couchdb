@@ -17,27 +17,36 @@ const {
   path,
   prop,
   propEq,
-  pluck,
 } = R;
-const lensRev = lens(path(["value", "rev"]), assoc("rev"));
-const lensId = lens(prop("id"), assoc("_id"));
 
 const xRevs = map(
   compose(
     omit(["key", "value"]),
-    over(lensRev, identity),
+    over(
+      lens(path(["value", "rev"]), assoc("rev")),
+      identity,
+    ),
   ),
 );
 const mergeWithRevs = (docs) =>
   (revs) =>
     map((doc) => {
-      const rev = find((rev) => doc.id === rev.id, revs);
+      const rev = find((rev) => doc._id === rev.id || doc.id === rev.id, revs);
       return rev ? { _rev: rev.rev, ...doc } : doc;
     }, docs);
 
-const switchIds = map(compose(omit(["id"]), over(lensId, identity)));
+// TODO: remove with blueberry
+const switchIds = map(
+  (doc) => ({
+    ...doc,
+    _id: doc._id || doc.id,
+    id: doc.id || doc._id,
+  }),
+);
 
-const pluckIds = pluck("id");
+const pluckIds = map(
+  (doc) => doc._id || doc.id,
+);
 
 const checkDocs = (docs) =>
   is(Object, head(docs))
