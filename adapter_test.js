@@ -174,8 +174,6 @@ test("retrieve document", async () => {
   });
   assertEquals(result.hello, "world");
   assertEquals(result._id, "1");
-  // TODO: remove when blueberry is released
-  assertEquals(result.id, result._id);
 });
 
 test("find documents", async () => {
@@ -192,9 +190,6 @@ test("find documents", async () => {
     _id: "1",
     hello: "world",
   });
-
-  // TODO: remove when blueberry is released
-  assertEquals(results.docs[0].id, results.docs[0]._id);
 });
 
 test("create query index", async () => {
@@ -216,7 +211,4 @@ test("list documents", async () => {
     _id: "1",
     hello: "world",
   });
-
-  // TODO: remove when blueberry is released
-  assertEquals(results.docs[0].id, results.docs[0]._id);
 });

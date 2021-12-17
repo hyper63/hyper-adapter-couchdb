@@ -17,8 +17,12 @@ const {
   path,
   prop,
   propEq,
+  pluck,
 } = R;
 
+/**
+ * Moves value.rev to top lvl rev field, then removes key and value fields
+ */
 const xRevs = map(
   compose(
     omit(["key", "value"]),
@@ -28,25 +32,27 @@ const xRevs = map(
     ),
   ),
 );
+
+/**
+ * @param {*} docs - The docs from the bulk payload
+ * @returns a function that accepts a list of docs from the db, to merge with bulk payload
+ */
 const mergeWithRevs = (docs) =>
   (revs) =>
     map((doc) => {
-      const rev = find((rev) => doc._id === rev.id || doc.id === rev.id, revs);
+      /**
+       * incoming docs have an _id. revs have an id
+       */
+      const rev = find((rev) => doc._id === rev.id, revs);
+      /**
+       * If a rev exists, then update doc,
+       * Otherwise, create a doc with no _rev
+       * and Couch will create a new doc with a new rev
+       */
       return rev ? { _rev: rev.rev, ...doc } : doc;
     }, docs);
 
-// TODO: remove with blueberry
-const switchIds = map(
-  (doc) => ({
-    ...doc,
-    _id: doc._id || doc.id,
-    id: doc.id || doc._id,
-  }),
-);
-
-const pluckIds = map(
-  (doc) => doc._id || doc.id,
-);
+const pluckIds = pluck("_id");
 
 const checkDocs = (docs) =>
   is(Object, head(docs))
@@ -56,6 +62,7 @@ const checkDocs = (docs) =>
 export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
   const getDocsThatExist = (url, db, headers) =>
     (ids) =>
+      // https://docs.couchdb.org/en/stable/api/database/bulk-api.html#post--db-_all_docs
       asyncFetch(`${url}/${db}/_all_docs`, {
         method: "POST",
         body: JSON.stringify({ keys: ids }),
@@ -69,6 +76,7 @@ export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
 
   const applyBulkDocs = (url, db, headers) =>
     (docs) =>
+      // https://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-docs
       asyncFetch(`${url}/${db}/_bulk_docs`, {
         method: "POST",
         headers,
@@ -94,7 +102,6 @@ export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
       .map(pluckIds)
       .chain(getDocsThatExist(couchUrl, db, headers))
       .map(mergeWithRevs(map(omit(["_update"]), docs)))
-      .map(switchIds)
       .chain(applyBulkDocs(couchUrl, db, headers))
       .map(map(omit(["rev"])))
       .map(map((d) => d.error ? assoc("ok", false, d) : d))
