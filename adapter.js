@@ -17,6 +17,7 @@ const {
   toLower,
   head,
   toPairs,
+  filter,
 } = R;
 const xId = lens(prop("_id"), assoc("id"));
 
@@ -24,6 +25,10 @@ const lowerCaseValue = compose(
   ([k, v]) => ({ [k]: toLower(v) }),
   head,
   toPairs,
+);
+
+const omitDesignDocs = filter(
+  (doc) => !(/^_design/.test(doc._id)),
 );
 
 export function adapter({ config, asyncFetch, headers, handleResponse }) {
@@ -154,6 +159,10 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         query.sort = query.sort.map(lowerCaseValue);
       }
 
+      if (!query.selector) {
+        query.selector = {};
+      }
+
       return asyncFetch(`${config.origin}/${db}/_find`, {
         method: "POST",
         headers,
@@ -165,7 +174,11 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
           docs: map(
             compose(
               omit(["_rev"]),
-              over(xId, identity),
+              (doc) => ({
+                ...doc,
+                // TODO: remove with blueberry
+                id: doc.id || doc._id,
+              }),
             ),
             docs,
           ),
@@ -201,14 +214,16 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         body: JSON.stringify(options),
       })
         .chain(handleResponse(200))
-        .map((result) => ({
+        .map((result) => pluck("doc", result.rows))
+        .map(omitDesignDocs)
+        .map((docs) => ({
           ok: true,
           docs: map(
             compose(
               omit(["_rev"]),
               over(xId, identity),
             ),
-            pluck("doc", result.rows),
+            docs,
           ),
         }))
         .toPromise();
