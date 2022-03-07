@@ -10,10 +10,12 @@ ports:
     visibility: public
 
 tasks:
-  - init: docker build -t hyper-couch .couchdb
+  - name: Start CouchDB
+    init: docker build -t hyper-couch .couchdb
     command: |
       docker run -it -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password hyper-couch
-  - command: |
+  - name: Set Git Hooks
+    command: |
       git config core.hooksPath .hooks
       clear
 

@@ -6,7 +6,7 @@ const {
   compose,
   omit,
   map,
-  merge,
+  mergeRight,
   pluck,
   isEmpty,
   toLower,
@@ -205,11 +205,11 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
     listDocuments: ({ db, limit, startkey, endkey, keys, descending }) => {
       // deno-lint-ignore camelcase
       let options = { include_docs: true };
-      options = limit ? merge({ limit: Number(limit) }, options) : options;
-      options = startkey ? merge({ startkey }, options) : options;
-      options = endkey ? merge({ endkey }, options) : options;
-      options = keys ? merge({ keys: keys.split(",") }, options) : options;
-      options = descending ? merge({ descending }, options) : options;
+      options = limit ? mergeRight({ limit: Number(limit) }, options) : options;
+      options = startkey ? mergeRight({ startkey }, options) : options;
+      options = endkey ? mergeRight({ endkey }, options) : options;
+      options = keys ? mergeRight({ keys: keys.split(",") }, options) : options;
+      options = descending ? mergeRight({ descending }, options) : options;
 
       // https://docs.couchdb.org/en/stable/api/database/bulk-api.html#post--db-_all_docs
       return asyncFetch(`${config.origin}/${db}/_all_docs`, {
