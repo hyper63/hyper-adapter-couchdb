@@ -40,11 +40,29 @@ const testFetch = (url, options) => {
       json: () => Promise.resolve({ ok: true, id: "1" }),
     });
   }
+  // doc conflict
+  if (url === "http://localhost:5984/conflict" && options.method === "POST") {
+    return Promise.resolve({
+      status: 409,
+      ok: false,
+      json: () => Promise.resolve(),
+    });
+  }
   if (url === "http://localhost:5984/hello/1" && options.method === "GET") {
     return Promise.resolve({
       status: 200,
       ok: true,
       json: () => Promise.resolve({ _id: "1", _rev: "1", hello: "world" }),
+    });
+  }
+  // doc not found
+  if (
+    url === "http://localhost:5984/hello/not_found" && options.method === "GET"
+  ) {
+    return Promise.resolve({
+      status: 404,
+      ok: true,
+      json: () => Promise.resolve(),
     });
   }
 
@@ -155,16 +173,46 @@ test("create document", async () => {
   assertEquals(result.ok, true);
 });
 
-test("can not create design document", async () => {
-  try {
-    await a.createDocument({
-      db: "hello",
-      id: "_design/1",
-      doc: { hello: "world" },
-    });
-  } catch (e) {
-    assertEquals(e.ok, false);
-  }
+test("create document - empty doc", async () => {
+  const err = await a.createDocument({
+    db: "hello",
+    id: "1",
+    doc: {},
+  });
+
+  assertObjectMatch(err, {
+    ok: false,
+    status: 400,
+    msg: "document empty",
+  });
+});
+
+test("create document - conflict", async () => {
+  const err = await a.createDocument({
+    db: "conflict",
+    id: "1",
+    doc: { hello: "world" },
+  });
+
+  assertObjectMatch(err, {
+    ok: false,
+    status: 409,
+    msg: "document conflict",
+  });
+});
+
+test("create document - do not allow creating design document", async () => {
+  const err = await a.createDocument({
+    db: "hello",
+    id: "_design/1",
+    doc: { hello: "world" },
+  });
+
+  assertObjectMatch(err, {
+    ok: false,
+    status: 403,
+    msg: "user can not create design docs",
+  });
 });
 
 test("retrieve document", async () => {
@@ -174,6 +222,15 @@ test("retrieve document", async () => {
   });
   assertEquals(result.hello, "world");
   assertEquals(result._id, "1");
+});
+
+test("retrieve document - not found", async () => {
+  const err = await a.retrieveDocument({
+    db: "hello",
+    id: "not_found",
+  });
+
+  assertObjectMatch(err, { ok: false, status: 404, msg: "doc not found" });
 });
 
 test("find documents", async () => {

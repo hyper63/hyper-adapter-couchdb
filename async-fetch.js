@@ -1,7 +1,7 @@
 import { crocks, R } from "./deps.js";
 
 const { Async, composeK } = crocks;
-const { ifElse, propEq } = R;
+const { ifElse, propEq, assoc } = R;
 
 export const asyncFetch = (fetch) => Async.fromPromise(fetch);
 export const createHeaders = (username, password) => {
@@ -15,7 +15,12 @@ export const createHeaders = (username, password) => {
 };
 
 const toJSON = (result) => Async.fromPromise(result.json.bind(result))();
-const toJSONReject = composeK(Async.Rejected, toJSON);
+const toJSONReject = (result) =>
+  composeK(
+    Async.Rejected,
+    (body) => Async.Resolved(assoc("status", result.status, body)),
+    toJSON,
+  )(result);
 
 export const handleResponse = (code) =>
   ifElse(propEq("status", code), toJSON, toJSONReject);
