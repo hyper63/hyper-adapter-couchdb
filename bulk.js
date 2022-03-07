@@ -1,4 +1,5 @@
 import { crocks, R } from "./deps.js";
+import { handleHyperErr, HyperErr } from "./err.js";
 
 const { Async } = crocks;
 const {
@@ -57,7 +58,7 @@ const pluckIds = pluck("_id");
 const checkDocs = (docs) =>
   is(Object, head(docs))
     ? Async.Resolved(docs)
-    : Async.Rejected({ ok: false, msg: "docs must be objects" });
+    : Async.Rejected(HyperErr({ status: 422, msg: "docs must be objects" }));
 
 export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
   const getDocsThatExist = (url, db, headers) =>
@@ -91,7 +92,7 @@ export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
         .chain((res) =>
           propEq("db_name", db, res)
             ? Async.Resolved(docs)
-            : Async.Rejected({ ok: false, msg: "db not found" })
+            : Async.Rejected(HyperErr({ status: 404, msg: "db not found" }))
         );
 
   return ({ db, docs }) =>
@@ -106,5 +107,9 @@ export const bulk = (couchUrl, asyncFetch, headers, handleResponse) => {
       .map(map(omit(["rev"])))
       .map(map((d) => d.error ? assoc("ok", false, d) : d))
       .map((results) => ({ ok: true, results }))
+      .bichain(
+        handleHyperErr,
+        Async.Resolved,
+      )
       .toPromise();
 };

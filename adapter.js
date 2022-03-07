@@ -1,12 +1,15 @@
 import { crocks, R } from "./deps.js";
 import { bulk } from "./bulk.js";
+import { handleHyperErr, HyperErr } from "./err.js";
+
 const { Async } = crocks;
 
 const {
+  always,
   compose,
   omit,
   map,
-  merge,
+  mergeRight,
   pluck,
   isEmpty,
   toLower,
@@ -62,28 +65,37 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
           })
         )
         .chain(handleResponse(200))
+        .bichain(
+          handleHyperErr,
+          always(Async.Resolved({ ok: true })),
+        )
         .toPromise(),
 
     removeDatabase: (name) =>
       asyncFetch(`${config.origin}/${name}`, {
         method: "DELETE",
         headers,
-      }).chain(handleResponse(200)).toPromise(),
+      })
+        .chain(handleResponse(200))
+        .bichain(
+          handleHyperErr,
+          always(Async.Resolved({ ok: true })),
+        ).toPromise(),
 
     createDocument: ({ db, id, doc }) =>
       Async.of(doc)
         .chain((doc) =>
           isEmpty(doc)
-            ? Async.Rejected({ ok: false, status: 400, msg: "document empty" })
+            ? Async.Rejected(HyperErr({ status: 400, msg: "document empty" }))
             : Async.Resolved(doc)
         )
         .chain((doc) => Async.Resolved({ ...doc, _id: id }))
         .chain((doc) =>
           /^_design/.test(doc._id)
-            ? Async.Rejected({
-              ok: false,
+            ? Async.Rejected(HyperErr({
+              status: 403,
               msg: "user can not create design docs",
-            })
+            }))
             : Async.Resolved(doc)
         )
         .chain((doc) =>
@@ -92,17 +104,21 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
             method: "POST",
             headers,
             body: JSON.stringify(doc),
-          })
+          }).chain(handleResponse(201))
+            .bichain(
+              (e) =>
+                // TODO: map some more errors from couch here
+                // TODO: see Status Codes section on https://docs.couchdb.org/en/stable/api/database/common.html#post--db
+                e.status !== 409 ? Async.Rejected(e) : Async.Rejected(HyperErr({
+                  status: 409,
+                  msg: "document conflict",
+                })),
+              Async.Resolved,
+            )
         )
-        .chain(handleResponse(201))
-        .map(omit(["rev"]))
+        .map(omit(["rev"])) // { ok, id }
         .bichain(
-          (e) =>
-            e.status ? Async.Rejected(e) : Async.Rejected({
-              ok: false,
-              status: 409,
-              msg: "document conflict",
-            }),
+          handleHyperErr,
           Async.Resolved,
         )
         .toPromise(),
@@ -112,7 +128,13 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         .map(omit(["_rev"]))
         .bichain(
           (_) =>
-            Async.Rejected({ ok: false, status: 404, msg: "doc not found" }),
+            Async.Rejected(
+              HyperErr({ status: 404, msg: "doc not found" }),
+            ),
+          Async.Resolved,
+        )
+        .bichain(
+          handleHyperErr,
           Async.Resolved,
         )
         .toPromise(),
@@ -142,7 +164,11 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
             })
         )
         .chain(handleResponse(201))
-        .map(omit(["rev"]))
+        .map(omit(["rev"])) // { ok, id }
+        .bichain(
+          handleHyperErr,
+          Async.Resolved,
+        )
         .toPromise();
     },
 
@@ -156,7 +182,11 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
           })
         )
         .chain(handleResponse(200))
-        .map(omit(["rev"]))
+        .map(omit(["rev"])) // { ok, id }
+        .bichain(
+          handleHyperErr,
+          Async.Resolved,
+        )
         .toPromise(),
 
     queryDocuments: ({ db, query }) => {
@@ -183,6 +213,10 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
             docs,
           ),
         }))
+        .bichain(
+          handleHyperErr,
+          Async.Resolved,
+        )
         .toPromise();
     },
 
@@ -199,17 +233,20 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         }),
       })
         .chain(handleResponse(200))
-        .map(() => ({ ok: true }))
+        .bichain(
+          handleHyperErr,
+          always(Async.Resolved({ ok: true })),
+        )
         .toPromise(),
 
     listDocuments: ({ db, limit, startkey, endkey, keys, descending }) => {
       // deno-lint-ignore camelcase
       let options = { include_docs: true };
-      options = limit ? merge({ limit: Number(limit) }, options) : options;
-      options = startkey ? merge({ startkey }, options) : options;
-      options = endkey ? merge({ endkey }, options) : options;
-      options = keys ? merge({ keys: keys.split(",") }, options) : options;
-      options = descending ? merge({ descending }, options) : options;
+      options = limit ? mergeRight({ limit: Number(limit) }, options) : options;
+      options = startkey ? mergeRight({ startkey }, options) : options;
+      options = endkey ? mergeRight({ endkey }, options) : options;
+      options = keys ? mergeRight({ keys: keys.split(",") }, options) : options;
+      options = descending ? mergeRight({ descending }, options) : options;
 
       // https://docs.couchdb.org/en/stable/api/database/bulk-api.html#post--db-_all_docs
       return asyncFetch(`${config.origin}/${db}/_all_docs`, {
@@ -227,6 +264,10 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
             docs,
           ),
         }))
+        .bichain(
+          handleHyperErr,
+          Async.Resolved,
+        )
         .toPromise();
     },
     bulkDocuments: bulk(config.origin, asyncFetch, headers, handleResponse),
