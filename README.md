@@ -87,8 +87,8 @@ export { default as couchdb } from "https://x.nest.land/hyper-adapter-couchdb@VE
 
 ## Methods
 
-This adapter fully implements the Search port and can be used as the
-[hyper Data service](https://docs.hyper.io/data-api) adapter
+This adapter fully implements the Data port and can be used as the
+[hyper Data service](https://docs.hyper.io/oss/data-api) adapter
 
 See the full port [here](https://nest.land/package/hyper-port-data)
 
