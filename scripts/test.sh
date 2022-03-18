@@ -2,4 +2,4 @@
 
 deno lint && \
 deno fmt --check && \
-deno test  --allow-net 
+deno test  --allow-net --no-check
