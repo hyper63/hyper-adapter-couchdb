@@ -8,15 +8,21 @@ const {
   always,
   compose,
   omit,
-  map,
   mergeRight,
-  pluck,
+  prop,
   isEmpty,
   toLower,
   head,
   toPairs,
-  filter,
+  isNil,
+  complement,
+  ifElse,
+  reduce,
+  allPass,
+  pluck,
 } = R;
+
+const isDefined = complement(isNil);
 
 const lowerCaseValue = compose(
   ([k, v]) => ({ [k]: toLower(v) }),
@@ -24,9 +30,31 @@ const lowerCaseValue = compose(
   toPairs,
 );
 
-const omitDesignDocs = filter(
-  (doc) => !(/^_design/.test(doc._id)),
-);
+/**
+ * Something wonky is happening with Ramda's reduce.
+ * Even though it's curried, I have to include 'all' parameter here,
+ * otherwise reduce does something different.
+ *
+ * definitely will file an issue on ramda repo
+ */
+const foldDocs = (all) =>
+  reduce(
+    (docs, doc) => {
+      return ifElse(
+        allPass([
+          isDefined, // must be defined
+          (doc) => !(/^_design/.test(doc._id)), // filter out all design docs
+        ]),
+        (doc) => {
+          docs.push(omit(["_rev"], doc));
+          return docs;
+        },
+        always(docs),
+      )(doc);
+    },
+    [],
+    all,
+  );
 
 export function adapter({ config, asyncFetch, headers, handleResponse }) {
   const retrieveDocument = ({ db, id }) =>
@@ -205,14 +233,9 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         body: JSON.stringify(query),
       })
         .chain(handleResponse(200))
-        .map(omitDesignDocs)
-        .map(({ docs }) => ({
-          ok: true,
-          docs: map(
-            omit(["_rev"]),
-            docs,
-          ),
-        }))
+        .map(prop("docs"))
+        .map(foldDocs)
+        .map((docs) => ({ ok: true, docs }))
         .bichain(
           handleHyperErr,
           Async.Resolved,
@@ -255,15 +278,10 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         body: JSON.stringify(options),
       })
         .chain(handleResponse(200))
-        .map((result) => pluck("doc", result.rows))
-        .map(omitDesignDocs)
-        .map((docs) => ({
-          ok: true,
-          docs: map(
-            omit(["_rev"]),
-            docs,
-          ),
-        }))
+        .map(prop("rows"))
+        .map(pluck("doc"))
+        .map(foldDocs)
+        .map((docs) => ({ ok: true, docs }))
         .bichain(
           handleHyperErr,
           Async.Resolved,

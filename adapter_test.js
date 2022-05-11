@@ -75,7 +75,13 @@ const testFetch = (url, options) => {
       json: () =>
         Promise.resolve({
           ok: true,
-          docs: [{ _id: "1", _rev: "1", hello: "world" }],
+          docs: [
+            { _id: "1", _rev: "1", hello: "world" },
+            // should be filtered out because design doc
+            { _id: "_design_2", _rev: "2", hello: "world" },
+            // should be filtered out because nil
+            undefined,
+          ],
         }),
     });
   }
@@ -104,6 +110,16 @@ const testFetch = (url, options) => {
             id: "1",
             value: { rev: "1" },
             doc: { _id: "1", _rev: "1", hello: "world" },
+          }, {
+            key: "2",
+            id: "2",
+            value: { rev: "2" },
+            doc: { _id: "_design_2", _rev: "2", hello: "world" }, // should be fitlered out because design doc
+          }, {
+            key: "3",
+            id: "3",
+            value: { rev: "3" },
+            no_doc: { _id: "3", _rev: "3", hello: "world" }, // should be filtered out because no 'doc' key
           }],
         }),
     });
@@ -243,6 +259,7 @@ test("find documents", async () => {
     },
   });
 
+  assertEquals(results.docs.length, 1);
   assertObjectMatch(results.docs[0], {
     _id: "1",
     hello: "world",
@@ -264,6 +281,8 @@ test("list documents", async () => {
     db: "hello",
     limit: 1,
   });
+
+  assertEquals(results.docs.length, 1);
   assertObjectMatch(results.docs[0], {
     _id: "1",
     hello: "world",
