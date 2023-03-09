@@ -1,1 +1,0 @@
-deno run --unstable --no-check -A ./scripts/hyper.js

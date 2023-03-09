@@ -23,35 +23,33 @@
 `hyper.config.js`
 
 ```js
-import { default as couchdb } from "https://x.nest.land/hyper-adapter-couchdb@VERSION/mod.js";
+import { default as couchdb } from 'https://x.nest.land/hyper-adapter-couchdb@VERSION/mod.js'
 
 export default {
   app: opine,
   adapter: [
-    { port: "data", plugins: [couchdb({ url: "http://localhost:5984" })] },
+    { port: 'data', plugins: [couchdb({ url: 'http://localhost:5984' })] },
   ],
-};
+}
 ```
 
 The value of the connection url should be in the following format:
 
 > `[protocol]://[key]:[secret]@[host]:[port]`
 
-When a new database is created, the following roles will be added to the
-security document:
+When a new database is created, the following roles will be added to the security document:
 
 - db-admin
 - db-user
 
-Using this adapter, you will not have any access to the \_users table or the
-_replicator table
+Using this adapter, you will not have any access to the \_users table or the _replicator table
 
 ### Credentials from ENV VARS
 
-When using this adapter, you will need to configure three environment variables,
-one for the `server-admin` credentials, so that the adapter can create/delete
-databases, and one for the `db-admin` user so a search index can be created. And
-finally one for the `db-user` user to manage documents.
+When using this adapter, you will need to configure three environment variables, one for the
+`server-admin` credentials, so that the adapter can create/delete databases, and one for the
+`db-admin` user so a search index can be created. And finally one for the `db-user` user to manage
+documents.
 
 .env
 
@@ -69,7 +67,7 @@ This is a Deno module available to import from
 deps.js
 
 ```js
-export { default as couchdb } from "https://x.nest.land/hyper-adapter-couchdb@VERSION/mod.js";
+export { default as couchdb } from 'https://x.nest.land/hyper-adapter-couchdb@VERSION/mod.js'
 ```
 
 ## Features
