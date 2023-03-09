@@ -1,8 +1,8 @@
-import { crocks, R } from "./deps.js";
-import { bulk } from "./bulk.js";
-import { handleHyperErr, HyperErr } from "./err.js";
+import { crocks, R } from './deps.js'
+import { bulk } from './bulk.js'
+import { handleHyperErr, HyperErr } from './err.js'
 
-const { Async } = crocks;
+const { Async } = crocks
 
 const {
   always,
@@ -20,15 +20,15 @@ const {
   reduce,
   allPass,
   pluck,
-} = R;
+} = R
 
-const isDefined = complement(isNil);
+const isDefined = complement(isNil)
 
 const lowerCaseValue = compose(
   ([k, v]) => ({ [k]: toLower(v) }),
   head,
   toPairs,
-);
+)
 
 /**
  * Something wonky is happening with Ramda's reduce.
@@ -46,22 +46,22 @@ const foldDocs = (all) =>
           (doc) => !(/^_design/.test(doc._id)), // filter out all design docs
         ]),
         (doc) => {
-          docs.push(omit(["_rev"], doc));
-          return docs;
+          docs.push(omit(['_rev'], doc))
+          return docs
         },
         always(docs),
-      )(doc);
+      )(doc)
     },
     [],
     all,
-  );
+  )
 
 export function adapter({ config, asyncFetch, headers, handleResponse }) {
   const retrieveDocument = ({ db, id }) =>
     // https://docs.couchdb.org/en/stable/api/document/common.html#get--db-docid
     asyncFetch(`${config.origin}/${db}/${id}`, {
       headers,
-    }).chain(handleResponse(200));
+    }).chain(handleResponse(200))
 
   return ({
     // create database needs to
@@ -71,23 +71,23 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
     // to the database
     createDatabase: (name) =>
       asyncFetch(`${config.origin}/${name}`, {
-        method: "PUT",
+        method: 'PUT',
         headers,
       })
         .chain(handleResponse(201))
         // create security document
         .chain(() =>
           asyncFetch(`${config.origin}/${name}/_security`, {
-            method: "PUT",
+            method: 'PUT',
             headers,
             body: JSON.stringify({
               admins: {
                 names: [],
-                roles: ["db-admins"],
+                roles: ['db-admins'],
               },
               members: {
                 names: [],
-                roles: ["db-users"],
+                roles: ['db-users'],
               },
             }),
           })
@@ -101,7 +101,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
 
     removeDatabase: (name) =>
       asyncFetch(`${config.origin}/${name}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers,
       })
         .chain(handleResponse(200))
@@ -114,7 +114,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
       Async.of(doc)
         .chain((doc) =>
           isEmpty(doc)
-            ? Async.Rejected(HyperErr({ status: 400, msg: "document empty" }))
+            ? Async.Rejected(HyperErr({ status: 400, msg: 'document empty' }))
             : Async.Resolved(doc)
         )
         .chain((doc) => Async.Resolved({ ...doc, _id: id }))
@@ -122,14 +122,14 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
           /^_design/.test(doc._id)
             ? Async.Rejected(HyperErr({
               status: 403,
-              msg: "user can not create design docs",
+              msg: 'user can not create design docs',
             }))
             : Async.Resolved(doc)
         )
         .chain((doc) =>
           // https://docs.couchdb.org/en/stable/api/database/common.html#post--db
           asyncFetch(`${config.origin}/${db}`, {
-            method: "POST",
+            method: 'POST',
             headers,
             body: JSON.stringify(doc),
           }).chain(handleResponse(201))
@@ -139,12 +139,12 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
                 // TODO: see Status Codes section on https://docs.couchdb.org/en/stable/api/database/common.html#post--db
                 e.status !== 409 ? Async.Rejected(e) : Async.Rejected(HyperErr({
                   status: 409,
-                  msg: "document conflict",
+                  msg: 'document conflict',
                 })),
               Async.Resolved,
             )
         )
-        .map(omit(["rev"])) // { ok, id }
+        .map(omit(['rev'])) // { ok, id }
         .bichain(
           handleHyperErr,
           Async.Resolved,
@@ -153,11 +153,11 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
 
     retrieveDocument: ({ db, id }) =>
       retrieveDocument({ db, id })
-        .map(omit(["_rev"]))
+        .map(omit(['_rev']))
         .bichain(
           (_) =>
             Async.Rejected(
-              HyperErr({ status: 404, msg: "doc not found" }),
+              HyperErr({ status: 404, msg: 'doc not found' }),
             ),
           Async.Resolved,
         )
@@ -175,29 +175,29 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
       })
         .chain((res) => Async.fromPromise(res.json.bind(res))())
         .map((doc) => {
-          return doc.error ? null : doc;
+          return doc.error ? null : doc
         })
         .chain((old) =>
           // https://docs.couchdb.org/en/stable/api/document/common.html#put--db-docid
           old
             ? asyncFetch(`${config.origin}/${db}/${id}?rev=${old._rev}`, {
-              method: "PUT",
+              method: 'PUT',
               headers,
               body: JSON.stringify(doc),
             })
             : asyncFetch(`${config.origin}/${db}/${id}`, {
-              method: "PUT",
+              method: 'PUT',
               headers,
               body: JSON.stringify(doc),
             })
         )
         .chain(handleResponse(201))
-        .map(omit(["rev"])) // { ok, id }
+        .map(omit(['rev'])) // { ok, id }
         .bichain(
           handleHyperErr,
           Async.Resolved,
         )
-        .toPromise();
+        .toPromise()
     },
 
     removeDocument: ({ db, id }) =>
@@ -205,12 +205,12 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         .chain((old) =>
           // https://docs.couchdb.org/en/stable/api/document/common.html#delete--db-docid
           asyncFetch(`${config.origin}/${db}/${id}?rev=${old._rev}`, {
-            method: "DELETE",
+            method: 'DELETE',
             headers,
           })
         )
         .chain(handleResponse(200))
-        .map(omit(["rev"])) // { ok, id }
+        .map(omit(['rev'])) // { ok, id }
         .bichain(
           handleHyperErr,
           Async.Resolved,
@@ -219,34 +219,34 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
 
     queryDocuments: ({ db, query }) => {
       if (query.sort) {
-        query.sort = query.sort.map(lowerCaseValue);
+        query.sort = query.sort.map(lowerCaseValue)
       }
 
       if (!query.selector) {
-        query.selector = {};
+        query.selector = {}
       }
 
       // https://docs.couchdb.org/en/stable/api/database/find.html
       return asyncFetch(`${config.origin}/${db}/_find`, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify(query),
       })
         .chain(handleResponse(200))
-        .map(prop("docs"))
+        .map(prop('docs'))
         .map(foldDocs)
         .map((docs) => ({ ok: true, docs }))
         .bichain(
           handleHyperErr,
           Async.Resolved,
         )
-        .toPromise();
+        .toPromise()
     },
 
     indexDocuments: ({ db, name, fields }) =>
       // https://docs.couchdb.org/en/stable/api/database/find.html#post--db-_index
       asyncFetch(`${config.origin}/${db}/_index`, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify({
           index: {
@@ -264,30 +264,30 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
 
     listDocuments: ({ db, limit, startkey, endkey, keys, descending }) => {
       // deno-lint-ignore camelcase
-      let options = { include_docs: true };
-      options = limit ? mergeRight({ limit: Number(limit) }, options) : options;
-      options = startkey ? mergeRight({ startkey }, options) : options;
-      options = endkey ? mergeRight({ endkey }, options) : options;
-      options = keys ? mergeRight({ keys: keys.split(",") }, options) : options;
-      options = descending ? mergeRight({ descending }, options) : options;
+      let options = { include_docs: true }
+      options = limit ? mergeRight({ limit: Number(limit) }, options) : options
+      options = startkey ? mergeRight({ startkey }, options) : options
+      options = endkey ? mergeRight({ endkey }, options) : options
+      options = keys ? mergeRight({ keys: keys.split(',') }, options) : options
+      options = descending ? mergeRight({ descending }, options) : options
 
       // https://docs.couchdb.org/en/stable/api/database/bulk-api.html#post--db-_all_docs
       return asyncFetch(`${config.origin}/${db}/_all_docs`, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify(options),
       })
         .chain(handleResponse(200))
-        .map(prop("rows"))
-        .map(pluck("doc"))
+        .map(prop('rows'))
+        .map(pluck('doc'))
         .map(foldDocs)
         .map((docs) => ({ ok: true, docs }))
         .bichain(
           handleHyperErr,
           Async.Resolved,
         )
-        .toPromise();
+        .toPromise()
     },
     bulkDocuments: bulk(config.origin, asyncFetch, headers, handleResponse),
-  });
+  })
 }
