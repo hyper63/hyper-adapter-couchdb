@@ -8,6 +8,7 @@ const COUCH = 'http://localhost:5984'
 const testFetch = (url, options) => {
   options.method = options.method || 'GET'
 
+  // Create DB
   if (url === 'http://localhost:5984/hello' && options.method === 'PUT') {
     return Promise.resolve({
       status: 201,
@@ -15,6 +16,7 @@ const testFetch = (url, options) => {
       json: () => Promise.resolve({ ok: true }),
     })
   }
+  // Create security
   if (
     url === 'http://localhost:5984/hello/_security' && options.method === 'PUT'
   ) {
@@ -25,6 +27,7 @@ const testFetch = (url, options) => {
     })
   }
 
+  // Delete DB
   if (url === 'http://localhost:5984/hello' && options.method === 'DELETE') {
     return Promise.resolve({
       status: 200,
@@ -33,14 +36,15 @@ const testFetch = (url, options) => {
     })
   }
 
+  // Create Document
   if (url === 'http://localhost:5984/hello' && options.method === 'POST') {
     return Promise.resolve({
       status: 201,
       ok: true,
-      json: () => Promise.resolve({ ok: true, id: '1' }),
+      json: () => Promise.resolve({ ok: true, rev: 'foo', id: '1' }),
     })
   }
-  // doc conflict
+  // Create Document conflict
   if (url === 'http://localhost:5984/conflict' && options.method === 'POST') {
     return Promise.resolve({
       status: 409,
@@ -48,6 +52,8 @@ const testFetch = (url, options) => {
       json: () => Promise.resolve(),
     })
   }
+
+  // Get Document
   if (url === 'http://localhost:5984/hello/1' && options.method === 'GET') {
     return Promise.resolve({
       status: 200,
@@ -55,7 +61,8 @@ const testFetch = (url, options) => {
       json: () => Promise.resolve({ _id: '1', _rev: '1', hello: 'world' }),
     })
   }
-  // doc not found
+
+  // Get Document - Not Found
   if (
     url === 'http://localhost:5984/hello/not_found' && options.method === 'GET'
   ) {
@@ -66,6 +73,7 @@ const testFetch = (url, options) => {
     })
   }
 
+  // Query Docs
   if (
     url === 'http://localhost:5984/hello/_find' && options.method === 'POST'
   ) {
@@ -86,6 +94,7 @@ const testFetch = (url, options) => {
     })
   }
 
+  // Index Docs
   if (
     url === 'http://localhost:5984/hello/_index' && options.method === 'POST'
   ) {
@@ -96,6 +105,7 @@ const testFetch = (url, options) => {
     })
   }
 
+  // List Docs
   if (
     url === 'http://localhost:5984/hello/_all_docs' && options.method === 'POST'
   ) {
@@ -133,6 +143,7 @@ const testFetch = (url, options) => {
     })
   }
 
+  // Bulk Documents
   if (
     url === 'http://localhost:5984/hello/_bulk_docs' &&
     options.method === 'POST'
@@ -159,131 +170,228 @@ const a = adapter({
   handleResponse,
 })
 
-test('bulk documents', async () => {
-  const result = await a.bulkDocuments({
-    db: 'hello',
-    docs: [{ _id: '1' }, { _id: '2' }],
-  }).catch((err) => ({ ok: false, err }))
-  console.log('results', result)
-  assertEquals(result.ok, true)
-  assertEquals(result.results.length, 2)
-})
+test('adapter', async (t) => {
+  await t.step('createDatabase', async (t) => {
+    await t.step('should create a database', async () => {
+      const result = await a.createDatabase('hello')
+      assertEquals(result.ok, true)
+    })
 
-test('create database', async () => {
-  const result = await a.createDatabase('hello')
-  assertEquals(result.ok, true)
-})
-
-test('remove database', async () => {
-  const result = await a.removeDatabase('hello')
-  assertEquals(result.ok, true)
-})
-
-test('create document', async () => {
-  const result = await a.createDocument({
-    db: 'hello',
-    id: '1',
-    doc: { hello: 'world' },
-  })
-  assertEquals(result.ok, true)
-})
-
-test('create document - empty doc', async () => {
-  const err = await a.createDocument({
-    db: 'hello',
-    id: '1',
-    doc: {},
+    await t.step('should return a HyperErr if the database already exists', async () => {
+    })
   })
 
-  assertObjectMatch(err, {
-    ok: false,
-    status: 400,
-    msg: 'document empty',
-  })
-})
+  await t.step('removeDatabase', async (t) => {
+    await t.step('should remove the database', async () => {
+      const result = await a.removeDatabase('hello')
+      assertEquals(result.ok, true)
+    })
 
-test('create document - conflict', async () => {
-  const err = await a.createDocument({
-    db: 'conflict',
-    id: '1',
-    doc: { hello: 'world' },
+    await t.step('should return a HyperErr if the database does not exist', async () => {
+    })
   })
 
-  assertObjectMatch(err, {
-    ok: false,
-    status: 409,
-    msg: 'document conflict',
+  await t.step('createDocument', async (t) => {
+    await t.step('should create the document', async () => {
+      const result = await a.createDocument({
+        db: 'hello',
+        id: '1',
+        doc: { hello: 'world' },
+      })
+      assertEquals(result.ok, true)
+    })
+
+    await t.step('should omit rev from the result', async () => {
+      const result = await a.createDocument({
+        db: 'hello',
+        id: '1',
+        doc: { hello: 'world' },
+      })
+      assertEquals(!!result.rev, false)
+    })
+
+    await t.step('should return a HyperErr if the provided doc is empty', async () => {
+      const err = await a.createDocument({
+        db: 'hello',
+        id: '1',
+        doc: {},
+      })
+
+      assertObjectMatch(err, {
+        ok: false,
+        status: 400,
+        msg: 'document empty',
+      })
+    })
+
+    await t.step('should return a HyperErr if a doc with _id already exists', async () => {
+      const err = await a.createDocument({
+        db: 'conflict',
+        id: '1',
+        doc: { hello: 'world' },
+      })
+
+      assertObjectMatch(err, {
+        ok: false,
+        status: 409,
+        msg: 'document conflict',
+      })
+    })
+
+    await t.step('should return a HyperErr if attempting to create a design doc', async () => {
+      const err = await a.createDocument({
+        db: 'hello',
+        id: '_design/1',
+        doc: { hello: 'world' },
+      })
+
+      assertObjectMatch(err, {
+        ok: false,
+        status: 403,
+        msg: 'user can not create design docs',
+      })
+    })
   })
-})
 
-test('create document - do not allow creating design document', async () => {
-  const err = await a.createDocument({
-    db: 'hello',
-    id: '_design/1',
-    doc: { hello: 'world' },
+  await t.step('retrieveDocument', async (t) => {
+    await t.step('should retrieve the document', async () => {
+      const result = await a.retrieveDocument({
+        db: 'hello',
+        id: '1',
+      })
+      assertEquals(result.hello, 'world')
+      assertEquals(result._id, '1')
+    })
+
+    await t.step('should omit _rev from the result', async () => {
+      const result = await a.retrieveDocument({
+        db: 'hello',
+        id: '1',
+      })
+      assertEquals(!!result.rev, false)
+    })
+
+    await t.step('should return a HyperErr if no document is found', async () => {
+      const err = await a.retrieveDocument({
+        db: 'hello',
+        id: 'not_found',
+      })
+      assertObjectMatch(err, { ok: false, status: 404, msg: 'doc not found' })
+    })
   })
 
-  assertObjectMatch(err, {
-    ok: false,
-    status: 403,
-    msg: 'user can not create design docs',
-  })
-})
+  await t.step('removeDocument', async (t) => {
+    await t.step('should remove the document', () => {
+    })
 
-test('retrieve document', async () => {
-  const result = await a.retrieveDocument({
-    db: 'hello',
-    id: '1',
-  })
-  assertEquals(result.hello, 'world')
-  assertEquals(result._id, '1')
-})
-
-test('retrieve document - not found', async () => {
-  const err = await a.retrieveDocument({
-    db: 'hello',
-    id: 'not_found',
+    await t.step('should return a HyperErr if no document is found to remove', async () => {
+    })
   })
 
-  assertObjectMatch(err, { ok: false, status: 404, msg: 'doc not found' })
-})
+  await t.step('updateDocument', async (t) => {
+    await t.step('should update the document', async () => {
+    })
 
-test('find documents', async () => {
-  const results = await a.queryDocuments({
-    db: 'hello',
-    query: {
-      selector: {
+    await t.step('should return a HyperErr if no document to update is found', async () => {
+    })
+  })
+
+  await t.step('queryDocuments', async (t) => {
+    await t.step('should return the documents found', async () => {
+      const results = await a.queryDocuments({
+        db: 'hello',
+        query: {
+          selector: {
+            _id: '1',
+          },
+        },
+      })
+
+      assertEquals(results.docs.length, 1)
+      assertObjectMatch(results.docs[0], {
         _id: '1',
-      },
-    },
+        hello: 'world',
+      })
+    })
+
+    await t.step('should lowercase the sort if provided', async () => {
+    })
+
+    await t.step('should remove undefined docs', async () => {
+    })
+
+    await t.step('should remove design docs', async () => {
+    })
+
+    await t.step('should remove _rev from all documents', async () => {
+    })
   })
 
-  assertEquals(results.docs.length, 1)
-  assertObjectMatch(results.docs[0], {
-    _id: '1',
-    hello: 'world',
-  })
-})
+  await t.step('indexDocuments', async (t) => {
+    await t.step('should create the index', async () => {
+      const results = await a.indexDocuments({
+        db: 'hello',
+        name: 'foo',
+        fields: ['foo'],
+      })
+      assertEquals(results.ok, true)
+    })
 
-test('create query index', async () => {
-  const results = await a.indexDocuments({
-    db: 'hello',
-    name: 'foo',
-    fields: ['foo'],
-  })
-  //console.log("results", results);
-  assertEquals(results.ok, true)
-})
-
-test('list documents', async () => {
-  const results = await a.listDocuments({
-    db: 'hello',
-    limit: 1,
+    await t.step('should properly map to the index body', async () => {
+    })
   })
 
-  assertEquals(results.docs.length, 1)
-  assertObjectMatch(results.docs[0], {
-    _id: '1',
-    hello: 'world',
+  await t.step('bulkDocuments', async (t) => {
+    await t.step('should bulk upsert the documents', async () => {
+      const result = await a.bulkDocuments({
+        db: 'hello',
+        docs: [{ _id: '1' }, { _id: '2' }],
+      }).catch((err) => ({ ok: false, err }))
+      console.log('results', result)
+      assertEquals(result.ok, true)
+      assertEquals(result.results.length, 2)
+    })
+
+    await t.step('should attach revs to documents that are being updated', async () => {
+    })
+
+    await t.step('should map per document errors', async () => {
+    })
+
+    await t.step('should remove rev from each doc result', async () => {
+    })
+
+    await t.step('should return a HyperErr if no db exists', async () => {
+    })
+
+    await t.step('should return a HyperErr if any doc is not an Object', async () => {
+    })
+  })
+
+  await t.step('listDocuments', async (t) => {
+    await t.step('should list the documents', async () => {
+      const results = await a.listDocuments({
+        db: 'hello',
+        limit: 1,
+      })
+
+      assertEquals(results.docs.length, 1)
+      assertObjectMatch(results.docs[0], {
+        _id: '1',
+        hello: 'world',
+      })
+    })
+
+    await t.step('should include optional parameters', async () => {
+    })
+
+    await t.step('should remove undefined docs', async () => {
+    })
+
+    await t.step('should remove design docs', async () => {
+    })
+
+    await t.step('should remove _rev from all documents', async () => {
+    })
   })
 })
