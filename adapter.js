@@ -1,7 +1,7 @@
 import { crocks, R } from './deps.js'
 import { bulk } from './bulk.js'
 import { handleHyperErr, HyperErr } from './err.js'
-import { sanitizeRows } from './utils.js'
+import { sanitizeDocs, sanitizeRows } from './utils.js'
 
 const { Async } = crocks
 
@@ -15,47 +15,14 @@ const {
   toLower,
   head,
   toPairs,
-  isNil,
-  complement,
-  ifElse,
-  reduce,
-  allPass,
   trim,
 } = R
-
-const isDefined = complement(isNil)
 
 const lowerCaseValue = compose(
   ([k, v]) => ({ [k]: toLower(v) }),
   head,
   toPairs,
 )
-
-/**
- * Something wonky is happening with Ramda's reduce.
- * Even though it's curried, I have to include 'all' parameter here,
- * otherwise reduce does something different.
- *
- * definitely will file an issue on ramda repo
- */
-const foldDocs = (all) =>
-  reduce(
-    (docs, doc) => {
-      return ifElse(
-        allPass([
-          isDefined, // must be defined
-          (doc) => !(/^_design/.test(doc._id)), // filter out all design docs
-        ]),
-        (doc) => {
-          docs.push(omit(['_rev'], doc))
-          return docs
-        },
-        always(docs),
-      )(doc)
-    },
-    [],
-    all,
-  )
 
 export function adapter({ config, asyncFetch, headers, handleResponse }) {
   const retrieveDocument = ({ db, id }) =>
@@ -235,7 +202,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
       })
         .chain(handleResponse(200))
         .map(prop('docs'))
-        .map(foldDocs)
+        .map(sanitizeDocs)
         .map((docs) => ({ ok: true, docs }))
         .bichain(
           handleHyperErr,
