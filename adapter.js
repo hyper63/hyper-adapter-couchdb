@@ -1,6 +1,7 @@
 import { crocks, R } from './deps.js'
 import { bulk } from './bulk.js'
 import { handleHyperErr, HyperErr } from './err.js'
+import { sanitizeRows } from './utils.js'
 
 const { Async } = crocks
 
@@ -19,7 +20,7 @@ const {
   ifElse,
   reduce,
   allPass,
-  pluck,
+  trim,
 } = R
 
 const isDefined = complement(isNil)
@@ -268,7 +269,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
       options = limit ? mergeRight({ limit: Number(limit) }, options) : options
       options = startkey ? mergeRight({ startkey }, options) : options
       options = endkey ? mergeRight({ endkey }, options) : options
-      options = keys ? mergeRight({ keys: keys.split(',') }, options) : options
+      options = keys ? mergeRight({ keys: keys.split(',').map(trim) }, options) : options
       options = descending ? mergeRight({ descending }, options) : options
 
       // https://docs.couchdb.org/en/stable/api/database/bulk-api.html#post--db-_all_docs
@@ -279,8 +280,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
       })
         .chain(handleResponse(200))
         .map(prop('rows'))
-        .map(pluck('doc'))
-        .map(foldDocs)
+        .map(sanitizeRows)
         .map((docs) => ({ ok: true, docs }))
         .bichain(
           handleHyperErr,

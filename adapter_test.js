@@ -1,4 +1,4 @@
-import { assertEquals, assertObjectMatch } from './dev_deps.js'
+import { assert, assertEquals, assertObjectMatch } from './dev_deps.js'
 import { asyncFetch, createHeaders, handleResponse } from './async-fetch.js'
 import { adapter } from './adapter.js'
 
@@ -130,6 +130,11 @@ const testFetch = (url, options) => {
             id: '3',
             value: { rev: '3' },
             no_doc: { _id: '3', _rev: '3', hello: 'world' }, // should be filtered out because no 'doc' key
+          }, {
+            key: '4',
+            id: '4',
+            value: { rev: '4' },
+            doc: undefined,
           }],
         }),
     })
@@ -369,29 +374,114 @@ test('adapter', async (t) => {
   })
 
   await t.step('listDocuments', async (t) => {
-    await t.step('should list the documents', async () => {
+    await t.step('should list the documents', async (t) => {
       const results = await a.listDocuments({
         db: 'hello',
         limit: 1,
       })
 
-      assertEquals(results.docs.length, 1)
-      assertObjectMatch(results.docs[0], {
-        _id: '1',
-        hello: 'world',
+      await t.step('should return valid documents', () => {
+        assertEquals(results.docs.length, 1)
+        assertObjectMatch(results.docs[0], {
+          _id: '1',
+          hello: 'world',
+        })
+      })
+
+      await t.step('should remove undefined docs', () => {
+        assertEquals(results.docs.length, 1)
+        assert(results.docs[0] !== undefined)
+      })
+
+      await t.step('should remove design docs', () => {
+        assertEquals(results.docs.length, 1)
+        assert(results.docs[0]._id !== '_design_2')
+      })
+
+      await t.step('should remove _rev from all docs', () => {
+        assertEquals(results.docs.length, 1)
+        assert(!results.docs[0]._rev)
       })
     })
 
-    await t.step('should include optional parameters', async () => {
-    })
+    await t.step('should include optional parameters', async (t) => {
+      const a = adapter({
+        config: { origin: COUCH },
+        asyncFetch: asyncFetch((url, options) => {
+          // List Docs
+          if (
+            url === 'http://localhost:5984/hello/_all_docs' && options.method === 'POST'
+          ) {
+            return Promise.resolve({
+              status: 200,
+              ok: true,
+              json: () =>
+                Promise.resolve({
+                  ok: true,
+                  rows: [{
+                    key: '1',
+                    id: '1',
+                    value: { rev: '1' },
+                    doc: { _id: '1', _rev: '1', options: JSON.parse(options.body) },
+                  }],
+                }),
+            })
+          }
+        }),
+        headers: createHeaders('admin', 'password'),
+        handleResponse,
+      })
 
-    await t.step('should remove undefined docs', async () => {
-    })
+      await t.step('should always add include_docs', async () => {
+        const { docs: [doc] } = await a.listDocuments({
+          db: 'hello',
+          limit: 3,
+        })
+        assertEquals(doc.options.include_docs, true)
+      })
 
-    await t.step('should remove design docs', async () => {
-    })
+      await t.step('should include limit, parsing to a number', async () => {
+        const { docs: [withLimit] } = await a.listDocuments({
+          db: 'hello',
+          limit: 3,
+        })
+        assertEquals(withLimit.options.limit, 3)
+      })
 
-    await t.step('should remove _rev from all documents', async () => {
+      await t.step('should include the startkey', async () => {
+        const { docs: [withStartkey] } = await a.listDocuments({
+          db: 'hello',
+          startkey: '123',
+        })
+        assertEquals(withStartkey.options.startkey, '123')
+      })
+
+      await t.step('should include the endkey', async () => {
+        const { docs: [withEndkey] } = await a.listDocuments({
+          db: 'hello',
+          endkey: '123',
+        })
+        assertEquals(withEndkey.options.endkey, '123')
+      })
+
+      await t.step('should include the split trimmed keys', async () => {
+        const { docs: [withKeys] } = await a.listDocuments({
+          db: 'hello',
+          keys: '123,456, 789',
+        })
+        assertEquals(withKeys.options.keys.length, 3)
+        assertEquals(withKeys.options.keys[0], '123')
+        assertEquals(withKeys.options.keys[1], '456')
+        assertEquals(withKeys.options.keys[2], '789')
+      })
+
+      await t.step('should include descending', async () => {
+        const { docs: [withDescending] } = await a.listDocuments({
+          db: 'hello',
+          descending: true,
+        })
+        assertEquals(withDescending.options.descending, true)
+      })
     })
   })
 })
