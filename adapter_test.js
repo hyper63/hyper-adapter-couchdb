@@ -302,7 +302,7 @@ test('adapter', async (t) => {
   })
 
   await t.step('queryDocuments', async (t) => {
-    await t.step('should return the documents found', async () => {
+    await t.step('should return the documents found', async (t) => {
       const results = await a.queryDocuments({
         db: 'hello',
         query: {
@@ -312,23 +312,63 @@ test('adapter', async (t) => {
         },
       })
 
-      assertEquals(results.docs.length, 1)
-      assertObjectMatch(results.docs[0], {
-        _id: '1',
-        hello: 'world',
+      await t.step('should return valid documents', () => {
+        assertEquals(results.docs.length, 1)
+        assertObjectMatch(results.docs[0], {
+          _id: '1',
+          hello: 'world',
+        })
+      })
+
+      await t.step('should remove undefined docs', () => {
+        assertEquals(results.docs.length, 1)
+        assert(results.docs[0] !== undefined)
+      })
+
+      await t.step('should remove design docs', () => {
+        assertEquals(results.docs.length, 1)
+        assert(results.docs[0]._id !== '_design_2')
+      })
+
+      await t.step('should remove _rev from all docs', () => {
+        assertEquals(results.docs.length, 1)
+        assert(!results.docs[0]._rev)
       })
     })
 
-    await t.step('should lowercase the sort if provided', async () => {
-    })
+    await t.step('should lowercase sort and default empty selector', async () => {
+      const a = adapter({
+        config: { origin: COUCH },
+        asyncFetch: asyncFetch((url, options) => {
+          // Query Docs
+          if (
+            url === 'http://localhost:5984/hello/_find' && options.method === 'POST'
+          ) {
+            return Promise.resolve({
+              status: 200,
+              ok: true,
+              json: () =>
+                Promise.resolve({
+                  ok: true,
+                  docs: [
+                    { _id: '1', _rev: '1', options: JSON.parse(options.body) },
+                  ],
+                }),
+            })
+          }
+        }),
+        headers: createHeaders('admin', 'password'),
+        handleResponse,
+      })
 
-    await t.step('should remove undefined docs', async () => {
-    })
+      const { docs } = await a.queryDocuments({
+        db: 'hello',
+        query: { sort: [{ _id: 'ASC' }, { foo: 'DESC' }] },
+      })
 
-    await t.step('should remove design docs', async () => {
-    })
-
-    await t.step('should remove _rev from all documents', async () => {
+      assertEquals(docs[0].options.sort[0]._id, 'asc')
+      assertEquals(docs[0].options.sort[1].foo, 'desc')
+      assertEquals(docs[0].options.selector, {})
     })
   })
 
