@@ -201,6 +201,9 @@ test('adapter', async (t) => {
     })
 
     await t.step('should return a HyperErr if the database already exists', async () => {
+      // const result = await a.createDatabase('dne')
+      // assertEquals(result.ok, false)
+      // assertEquals(result.status, 409)
     })
   })
 
@@ -211,6 +214,9 @@ test('adapter', async (t) => {
     })
 
     await t.step('should return a HyperErr if the database does not exist', async () => {
+      // const result = await a.removeDatabase('hello')
+      // assertEquals(result.ok, true)
+      // assertEquals(result.status, 404)
     })
   })
 
@@ -322,21 +328,18 @@ test('adapter', async (t) => {
       assertEquals(!!result.rev, false)
     })
 
-    // await t.step('should return a HyperErr if no document is found to remove', async () => {
-    //   const result = await a.removeDocument({
-    //     db: 'hello',
-    //     id: 'not_found',
-    //   })
-    //   assertEquals(result.ok, false)
-    //   assertEquals(result.status, 404)
-    // })
+    await t.step('should return a HyperErr if no document is found to remove', async () => {
+      // const result = await a.removeDocument({
+      //   db: 'hello',
+      //   id: 'not_found',
+      // })
+      // assertEquals(result.ok, false)
+      // assertEquals(result.status, 404)
+    })
   })
 
   await t.step('updateDocument', async (t) => {
     await t.step('should update the document', async () => {
-    })
-
-    await t.step('should return a HyperErr if no document to update is found', async () => {
     })
   })
 
