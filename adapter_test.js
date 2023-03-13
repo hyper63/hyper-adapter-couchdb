@@ -73,6 +73,24 @@ const testFetch = (url, options) => {
     })
   }
 
+  // Remove Document
+  if (url === 'http://localhost:5984/hello/1?rev=1' && options.method === 'DELETE') {
+    return Promise.resolve({
+      status: 200,
+      ok: true,
+      json: () => Promise.resolve({ id: '1', rev: '1', ok: true }),
+    })
+  }
+
+  // Remove Document - Not Found
+  if (url === 'http://localhost:5984/hello/not_found' && options.method === 'DELETE') {
+    return Promise.resolve({
+      status: 404,
+      ok: true,
+      json: () => Promise.resolve({ ok: false, msg: 'not_found' }),
+    })
+  }
+
   // Query Docs
   if (
     url === 'http://localhost:5984/hello/_find' && options.method === 'POST'
@@ -286,11 +304,32 @@ test('adapter', async (t) => {
   })
 
   await t.step('removeDocument', async (t) => {
-    await t.step('should remove the document', () => {
+    await t.step('should remove the document', async () => {
+      const result = await a.removeDocument({
+        db: 'hello',
+        id: '1',
+      })
+
+      assertEquals(result.ok, true)
+      assertEquals(result.id, '1')
     })
 
-    await t.step('should return a HyperErr if no document is found to remove', async () => {
+    await t.step('should omit _rev from the result', async () => {
+      const result = await a.removeDocument({
+        db: 'hello',
+        id: '1',
+      })
+      assertEquals(!!result.rev, false)
     })
+
+    // await t.step('should return a HyperErr if no document is found to remove', async () => {
+    //   const result = await a.removeDocument({
+    //     db: 'hello',
+    //     id: 'not_found',
+    //   })
+    //   assertEquals(result.ok, false)
+    //   assertEquals(result.status, 404)
+    // })
   })
 
   await t.step('updateDocument', async (t) => {
@@ -383,6 +422,37 @@ test('adapter', async (t) => {
     })
 
     await t.step('should properly map to the index body', async () => {
+      const a = adapter({
+        config: { origin: COUCH },
+        asyncFetch: asyncFetch((url, options) => {
+          /**
+           * Check the body matches the expected couch index body
+           */
+          const body = JSON.parse(options.body)
+          assertObjectMatch(body, { index: { fields: ['foo'] }, ddoc: 'foo' })
+          // Index Docs
+          if (
+            url === 'http://localhost:5984/hello/_index' && options.method === 'POST'
+          ) {
+            return Promise.resolve({
+              status: 200,
+              ok: true,
+              json: () => Promise.resolve({ ok: true }),
+            })
+          }
+
+          // unreachable
+          assert(false)
+        }),
+        headers: createHeaders('admin', 'password'),
+        handleResponse,
+      })
+
+      await a.indexDocuments({
+        db: 'hello',
+        name: 'foo',
+        fields: ['foo'],
+      })
     })
   })
 

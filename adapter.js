@@ -1,7 +1,7 @@
 import { crocks, R } from './deps.js'
 import { bulk } from './bulk.js'
 import { handleHyperErr, HyperErr } from './err.js'
-import { sanitizeDocs, sanitizeRows } from './utils.js'
+import { omitRev, sanitizeDocs, sanitizeRows } from './utils.js'
 
 const { Async } = crocks
 
@@ -178,7 +178,7 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
           })
         )
         .chain(handleResponse(200))
-        .map(omit(['rev'])) // { ok, id }
+        .map(omitRev) // { ok, id }
         .bichain(
           handleHyperErr,
           Async.Resolved,
