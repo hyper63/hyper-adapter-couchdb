@@ -5,7 +5,7 @@
   "description": "Hyper Data port adapter for CouchDB",
   "homepage": "https://github.com/hyper63/hyper-adapter-couchdb",
   "repo": "https://github.com/hyper63/hyper-adapter-couchdb",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "unstable": false,
   "unlisted": false,
   "files": [
