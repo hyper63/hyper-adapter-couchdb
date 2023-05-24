@@ -1,5 +1,5 @@
-import { default as hyper } from 'https://x.nest.land/hyper@3.4.2/mod.js'
-import { default as app } from 'https://x.nest.land/hyper-app-opine@2.3.0/mod.js'
+import { default as hyper } from 'https://raw.githubusercontent.com/hyper63/hyper/hyper%40v4.0.1/packages/core/utils/plugin-schema.ts'
+import { default as app } from 'https://raw.githubusercontent.com/hyper63/hyper/hyper-app-express%40v1.0.2/packages/app-express/mod.ts'
 import { default as couchdb } from '../mod.js'
 
 hyper({
