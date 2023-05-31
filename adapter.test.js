@@ -433,7 +433,7 @@ test('adapter', async (t) => {
       assertEquals(results.ok, true)
     })
 
-    await t.step('should properly map to the index body', async () => {
+    await t.step('should properly map to the index name and string fields', async () => {
       const a = adapter({
         config: { origin: COUCH },
         asyncFetch: asyncFetch((url, options) => {
@@ -441,7 +441,7 @@ test('adapter', async (t) => {
            * Check the body matches the expected couch index body
            */
           const body = JSON.parse(options.body)
-          assertObjectMatch(body, { index: { fields: ['foo'] }, ddoc: 'foo' })
+          assertObjectMatch(body, { index: { fields: ['foo', 'Bar'] }, ddoc: 'foo' })
           // Index Docs
           if (
             url === 'http://localhost:5984/hello/_index' && options.method === 'POST'
@@ -463,7 +463,44 @@ test('adapter', async (t) => {
       await a.indexDocuments({
         db: 'hello',
         name: 'foo',
-        fields: ['foo'],
+        fields: ['foo', 'Bar'],
+      })
+    })
+
+    await t.step('should properly map to the index name and object fields', async () => {
+      const a = adapter({
+        config: { origin: COUCH },
+        asyncFetch: asyncFetch((url, options) => {
+          /**
+           * Check the body matches the expected couch index body
+           */
+          const body = JSON.parse(options.body)
+          assertObjectMatch(body, {
+            index: { fields: [{ foo: 'asc' }, { bar: 'asc' }] },
+            ddoc: 'foo',
+          })
+          // Index Docs
+          if (
+            url === 'http://localhost:5984/hello/_index' && options.method === 'POST'
+          ) {
+            return Promise.resolve({
+              status: 200,
+              ok: true,
+              json: () => Promise.resolve({ ok: true }),
+            })
+          }
+
+          // unreachable
+          assert(false)
+        }),
+        headers: createHeaders('admin', 'password'),
+        handleResponse,
+      })
+
+      await a.indexDocuments({
+        db: 'hello',
+        name: 'foo',
+        fields: [{ foo: 'ASC' }, { bar: 'ASC' }],
       })
     })
   })

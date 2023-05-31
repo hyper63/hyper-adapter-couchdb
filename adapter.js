@@ -201,24 +201,27 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         .toPromise()
     },
 
-    indexDocuments: ({ db, name, fields }) =>
-      // https://docs.couchdb.org/en/stable/api/database/find.html#post--db-_index
-      asyncFetch(`${config.origin}/${db}/_index`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          index: {
-            fields,
-          },
-          ddoc: name,
-        }),
-      })
+    indexDocuments: ({ db, name, fields }) => {
+      return Async.of(fields)
+        .map(mapSort)
+        .chain((fields) => {
+          // https://docs.couchdb.org/en/stable/api/database/find.html#post--db-_index
+          return asyncFetch(`${config.origin}/${db}/_index`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              index: { fields },
+              ddoc: name,
+            }),
+          })
+        })
         .chain(handleResponse(200))
         .bichain(
           handleHyperErr,
           always(Async.Resolved({ ok: true })),
         )
-        .toPromise(),
+        .toPromise()
+    },
 
     listDocuments: ({ db, limit, startkey, endkey, keys, descending }) => {
       // deno-lint-ignore camelcase
