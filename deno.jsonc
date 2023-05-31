@@ -2,17 +2,13 @@
   "tasks": {
     "cache": "deno cache --lock=deno.lock --lock-write deps.js dev_deps.js",
     "test": "deno lint && deno fmt --check && deno test -A --unstable --no-check",
-    "test:suite": "deno test --allow-net --allow-env --no-check --no-lock --import-map=https://x.nest.land/hyper-test@2.1.3/import_map.json https://x.nest.land/hyper-test@2.1.3/mod.js",
+    "test:suite": "deno test --allow-net --allow-env --no-check --no-lock --import-map=https://raw.githubusercontent.com/hyper63/hyper/hyper-test%40v2.1.4/packages/test/import_map.json https://raw.githubusercontent.com/hyper63/hyper/hyper-test%40v2.1.4/packages/test/mod.js",
     "test:harness": "deno run --unstable --no-check --no-lock -A ./test/hyper.js"
   },
   "fmt": {
-    "files": {
-      "include": ["./"]
-    },
-    "options": {
-      "lineWidth": 100,
-      "singleQuote": true,
-      "semiColons": false
-    }
+    "include": ["./"],
+    "lineWidth": 100,
+    "singleQuote": true,
+    "semiColons": false
   }
 }
