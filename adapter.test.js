@@ -411,6 +411,15 @@ test('adapter', async (t) => {
       assertEquals(docs[0].options.sort[0]._id, 'asc')
       assertEquals(docs[0].options.sort[1].foo, 'desc')
       assertEquals(docs[0].options.selector, {})
+
+      const { docs: docsWithStringSortAndNoDefaultSelector } = await a.queryDocuments({
+        db: 'hello',
+        query: { selector: { foo: 'bar' }, sort: ['_id', 'fooBar'] },
+      })
+
+      assertEquals(docsWithStringSortAndNoDefaultSelector[0].options.sort[0], '_id')
+      assertEquals(docsWithStringSortAndNoDefaultSelector[0].options.sort[1], 'fooBar')
+      assertEquals(docsWithStringSortAndNoDefaultSelector[0].options.selector, { foo: 'bar' })
     })
   })
 
