@@ -1,28 +1,18 @@
 import { crocks, R } from './deps.js'
 import { bulk } from './bulk.js'
 import { handleHyperErr, HyperErr } from './err.js'
-import { omitRev, sanitizeDocs, sanitizeRows } from './utils.js'
+import { mapSelector, mapSort, omitRev, sanitizeDocs, sanitizeRows } from './utils.js'
 
 const { Async } = crocks
 
 const {
   always,
-  compose,
   omit,
   mergeRight,
   prop,
   isEmpty,
-  toLower,
-  head,
-  toPairs,
   trim,
 } = R
-
-const lowerCaseValue = compose(
-  ([k, v]) => ({ [k]: toLower(v) }),
-  head,
-  toPairs,
-)
 
 export function adapter({ config, asyncFetch, headers, handleResponse }) {
   const retrieveDocument = ({ db, id }) =>
@@ -186,20 +176,20 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         .toPromise(),
 
     queryDocuments: ({ db, query }) => {
-      if (query.sort) {
-        query.sort = query.sort.map(lowerCaseValue)
-      }
-
-      if (!query.selector) {
-        query.selector = {}
-      }
-
-      // https://docs.couchdb.org/en/stable/api/database/find.html
-      return asyncFetch(`${config.origin}/${db}/_find`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(query),
-      })
+      return Async.of(query)
+        .map((query) => ({
+          ...query,
+          selector: mapSelector(query.selector),
+          sort: mapSort(query.sort),
+        }))
+        // https://docs.couchdb.org/en/stable/api/database/find.html
+        .chain((query) =>
+          asyncFetch(`${config.origin}/${db}/_find`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(query),
+          })
+        )
         .chain(handleResponse(200))
         .map(prop('docs'))
         .map(sanitizeDocs)
