@@ -201,18 +201,17 @@ export function adapter({ config, asyncFetch, headers, handleResponse }) {
         .toPromise()
     },
 
-    indexDocuments: ({ db, name, fields }) => {
-      return Async.of(fields)
-        .map(mapSort)
-        .chain((fields) => {
+    indexDocuments: ({ db, name, fields, partialFilter }) => {
+      return Async.of({
+        fields: mapSort(fields),
+        ...(partialFilter ? { partial_filter_selector: partialFilter } : {}),
+      })
+        .chain((index) => {
           // https://docs.couchdb.org/en/stable/api/database/find.html#post--db-_index
           return asyncFetch(`${config.origin}/${db}/_index`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({
-              index: { fields },
-              ddoc: name,
-            }),
+            body: JSON.stringify({ index, ddoc: name }),
           })
         })
         .chain(handleResponse(200))

@@ -433,6 +433,46 @@ test('adapter', async (t) => {
       assertEquals(results.ok, true)
     })
 
+    await t.step('should properly map the partialFilter', async () => {
+      const a = adapter({
+        config: { origin: COUCH },
+        asyncFetch: asyncFetch((url, options) => {
+          /**
+           * Check the body matches the expected couch index body
+           */
+          const body = JSON.parse(options.body)
+          assertObjectMatch(body, {
+            index: { fields: ['foo', 'Bar'], partial_filter_selector: { type: 'bar' } },
+            ddoc: 'foo',
+          })
+          // Index Docs
+          if (
+            url === 'http://localhost:5984/hello/_index' && options.method === 'POST'
+          ) {
+            return Promise.resolve({
+              status: 200,
+              ok: true,
+              json: () => Promise.resolve({ ok: true }),
+            })
+          }
+
+          // unreachable
+          assert(false)
+        }),
+        headers: createHeaders('admin', 'password'),
+        handleResponse,
+      })
+
+      await a.indexDocuments({
+        db: 'hello',
+        name: 'foo',
+        fields: ['foo', 'Bar'],
+        partialFilter: {
+          type: 'bar',
+        },
+      })
+    })
+
     await t.step('should properly map to the index name and string fields', async () => {
       const a = adapter({
         config: { origin: COUCH },
