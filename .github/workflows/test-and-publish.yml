@@ -50,10 +50,14 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: ⎔ Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
+      - name: 👀 Env
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Git ref:    ${{ github.ref }}"
+          echo "GH actor:   ${{ github.actor }}"
+          echo "SHA:        ${{ github.sha }}"
+          VER=`node --version`; echo "Node ver:   $VER"
+          VER=`npm --version`; echo "npm ver:    $VER"
 
       - name: 🤓 Set Git User
         run: |
@@ -68,7 +72,8 @@ jobs:
 
       - name: ⬆️ Push
         run: |
-          git push --follow-tags
+          git push
+          git push --tags
 
       - name: 🤖 Create Github Release
         if: steps.bump.outputs.tag
