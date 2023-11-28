@@ -24,15 +24,6 @@
 
 <!-- tocstop -->
 
-## Table of Contents
-
-- [Getting Started](#getting-started)
-- [Installation](#installation)
-- [Features](#features)
-- [Methods](#methods)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Getting Started
 
 `hyper.config.js`
