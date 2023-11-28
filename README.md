@@ -9,6 +9,21 @@
 
 ---
 
+<!-- toc -->
+
+- [Table of Contents](#table-of-contents)
+- [Getting Started](#getting-started)
+  - [Credentials from ENV VARS](#credentials-from-env-vars)
+- [Installation](#installation)
+- [Features](#features)
+- [Methods](#methods)
+- [Contributing](#contributing)
+- [Testing](#testing)
+- [Setup a standalone couchdb server using docker](#setup-a-standalone-couchdb-server-using-docker)
+- [License](#license)
+
+<!-- tocstop -->
+
 ## Table of Contents
 
 - [Getting Started](#getting-started)
@@ -26,7 +41,7 @@
 import { default as couchdb } from 'https://x.nest.land/hyper-adapter-couchdb@VERSION/mod.js'
 
 export default {
-  app: opine,
+  app,
   adapter: [
     { port: 'data', plugins: [couchdb({ url: 'http://localhost:5984' })] },
   ],
